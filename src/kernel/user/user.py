@@ -10,6 +10,7 @@ from flask import (
     session,
     url_for,
 )
+from irods.auth.pam_password import ENSURE_SSL_IS_ACTIVE
 from irods.session import iRODSSession
 from irods.exception import PAM_AUTH_PASSWORD_FAILED
 from kernel.template_overrides import get_template_override_manager
@@ -140,6 +141,7 @@ def login_basic():
                 **connection_info["parameters"],
                 **connection_info["ssl_settings"],
             )
+            irods_session.set_auth_option_for_scheme("pam_password", ENSURE_SSL_IS_ACTIVE, False)
 
         except Exception as e:
             print(e)
@@ -148,7 +150,8 @@ def login_basic():
 
         # sanity check on credentials
         try:
-            irods_session.collections.get(f"/{irods_session.zone}/home")
+            # In SODAR, users don't have access to the shared home collection
+            irods_session.collections.get(f"/{irods_session.zone}/home/{username}")
         except PAM_AUTH_PASSWORD_FAILED as e:
             print(e)
             flash("Authentication failed: invalid password", category="danger")
