@@ -1,0 +1,18 @@
+services:
+  tika:
+    image: apache/tika:3.3.1.0-full
+    ports:
+      - 9998:9998
+    restart: unless-stopped
+
+  mango:
+    image: mango-sodar:latest
+    build: .
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - type: bind  # Traefik configuration for shared certs
+        source: ./server.crt
+        target: /etc/traefik/tls/server.crt
