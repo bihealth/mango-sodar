@@ -301,11 +301,12 @@ def read_file_in_chunks(file_posix_path: str, delete_after=False):
 
 
 def index():
-    view_template = get_template_override_manager(
-        g.irods_session.zone
-    ).get_template_for_catalog_item(
-        g.irods_session.collections.get(f"/{g.irods_session.zone}"), "index.html.j2"
-    )
+    # view_template = get_template_override_manager(
+    #     g.irods_session.zone
+    # ).get_template_for_catalog_item(
+    #     g.irods_session.collections.get(f"/{g.irods_session.zone}"), "index.html.j2"
+    # )
+    view_template = "index.html.j2"
     return render_template(
         view_template,
     )
@@ -340,12 +341,19 @@ def collection_browse(collection=None):
             co_path_elements = co_path_elements.pop(0)
         co_path = prefix + "/".join(co_path_elements)
 
-    try:
-        current_collection = g.irods_session.collections.get(co_path)
-    except:
-        abort(404, "Path not found or not accessible for you")
-    sub_collections = current_collection.subcollections
-    data_objects = current_collection.data_objects
+    if co_path == g.zone_home:
+        current_collection = g.irods_session.collections.get(g.user_home)
+        user_projects = g.irods_session.genquery2("SELECT COLL_NAME WHERE COLL_NAME LIKE '/sodarZone/projects/%'")
+        sub_collections = [g.irods_session.collections.get(c[0]) for c in user_projects if c[0].count('/') == 4]
+        data_objects = []
+    else:
+        try:
+            current_collection = g.irods_session.collections.get(co_path)
+        except:
+            abort(404, "Path not found or not accessible for you")
+
+        sub_collections = current_collection.subcollections
+        data_objects = current_collection.data_objects
 
     schemas = {}
     schema_manager = False
