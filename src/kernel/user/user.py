@@ -179,7 +179,9 @@ def login_basic():
             f"User {irods_session.username}, zone {irods_session.zone} logged in"
         )
 
-        return redirect(url_for("index"))
+        # Redirect to the referer
+        redirect_after_login = session.pop("redirect_after_login", url_for("index"))
+        return redirect(redirect_after_login)
 
 
 def irods_connection_info(zone, username, password):
