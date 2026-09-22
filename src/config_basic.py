@@ -43,8 +43,8 @@ MANGO_PLUGIN_BLUEPRINTS = [
    {"module": "plugins.basic_user_group_manager.admin", "blueprint": "basic_user_group_manager_admin_bp"},
 ]
 
-# MANGO_MAIN_LANDING_ROUTE = {"module": "kernel.common.browse", "function": "collection_browse"}
-MANGO_MAIN_LANDING_ROUTE = {"module": "kernel.common.browse", "function": "index"}
+MANGO_MAIN_LANDING_ROUTE = {"module": "kernel.common.browse", "function": "collection_browse"}
+# MANGO_MAIN_LANDING_ROUTE = {"module": "kernel.common.browse", "function": "index"}
 
 # MANGO_MAIN_LANDING_ROUTE = {"module": "plugins.user_tantra.realm", "function": "index"}
 # MANGO_SCHEMA_PERMISSIONS_MANAGER_CLASS = {"module": "plugins.mango_overrides.schema_permissions", "class": "GroupBasedSchemaPermissions"}
