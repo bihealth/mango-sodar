@@ -8,11 +8,18 @@ services:
   mango:
     image: mango-sodar:latest
     build: .
-    ports:
-      - 3000:3000
     restart: unless-stopped
     network_mode: host
+    environment:
+      DEBUG: true
+      MANGO_AUTH: "login"
+      IRODS_HOST: $IRODS_HOST
+      SECRET_KEY: $MANGO_SECRET_KEY
+      TIKA_URL: "http://localhost:9998"
     volumes:
       - type: bind  # Traefik configuration for shared certs
-        source: ./server.crt
+        source: $IRODS_SSL_CA_CERTIFICATE_PATH
         target: /etc/traefik/tls/server.crt
+      - type: bind  # Mount local files
+        source: ./src
+        target: /app
