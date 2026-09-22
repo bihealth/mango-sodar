@@ -2,7 +2,7 @@
 MANGO_NAVBAR_MODULES:
   - browse_bp
   - basic_search_bp
-  - metadata_schema_editor_bp
+  # - metadata_schema_editor_bp
   # From the below blueprints, only one should be enabled in config.py
   - operator_group_manager_admin_bp
   - basic_user_group_manager_admin_bp
