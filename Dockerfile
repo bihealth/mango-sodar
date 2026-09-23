@@ -1,10 +1,10 @@
 FROM python:3.12-bookworm
 
-ARG TIKA_URL=http://localhost:9998/
+LABEL org.opencontainers.image.source=https://github.com/bihealth/mango-sodar
+
 ARG IRODS_PKG_VERSION="4.3.5"
 ARG IRODS_PKG_SUFFIX="-0~bookworm"
 
-ENV TIKA_URL=$TIKA_URL
 ENV spOption="ManGO_portal"
 
 WORKDIR /app

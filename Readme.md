@@ -10,14 +10,22 @@ below.
 Copy env.example to .env and update the environment variables as appropriate for
 your setup.
 
+### Building the Docker image
+
+To build the image, use the following command:
+
+```bash
+MANGO_VERSION=x.x.x BUILD_VERSION=z ./build.sh
+```
+
 ### Running ManGO
 
-The docker-compose.yml file provides a development setup for ManGO. It provides
-Apache Tika as a supporting service, runs a Docker image with all the system
-dependencies, and mounts the local ./src directory into the container, so that
-any edits will be effective without re-building the image. Instead of using
-Docker compose, you may also follow the instructions in the original Readme
-below.
+The docker-compose.yml file provides a baisc development setup for ManGO. It
+includes Apache Tika as a supporting service, runs a Docker image with all the
+system dependencies, and mounts the local ./src directory into the container, so
+that any edits will be effective without re-building the image. Instead of using
+our Docker compose, you may also follow the instructions in the original Readme
+below to run ManGO on the host directly.
 
 - Make sure that irods is running and accessible from the host.
 - Obtain the irods server certificate and save its path in the environment
@@ -25,8 +33,9 @@ below.
 - From the ./src directory, `npm install` (only the first time) and `npm
   build` every time the Vue app changes (note that src/static/dist is also
   tracked in git).
-- Run `docker compose build mango` every time you want to rebuild the image.
 - Run `docker compose up` and point your browser to http://localhost:3000.
+
+---
 
 ## ManGO: an iRODS Python Client based portal
 
