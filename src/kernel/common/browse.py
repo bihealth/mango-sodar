@@ -1,6 +1,8 @@
 from curses import meta
 import flask
 
+import random
+from string import ascii_lowercase, digits
 from collections.abc import Mapping
 
 from flask import (
@@ -878,7 +880,7 @@ def download_object(data_object_path):
         mimetype = object_type
         status = 200
     else:
-        boundary = "5489031543arb"
+        boundary = "".join(random.choices(ascii_lowercase + digits, k=24))
         stream = stream_with_context(data_object_chunks_ranged(read_buffer_size, ranges, boundary))
         mimetype = f"multipart/byteranges; boundary={boundary}"
         status = 206
