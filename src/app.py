@@ -15,16 +15,20 @@ from flask import (
     url_for,
     render_template,
     Blueprint,
+    Response,
     session,
     current_app,
 )
 
+from flask_httpauth import HTTPBasicAuth
 from flask_session import Session
 
 # Early initialisation to avoid circulr imports from main app and its config by other modules
 app = Flask(__name__)
 app.config.from_pyfile(os.getenv("MANGO_CONFIG", "config.py"))
 # global dict holding the irods sessions per user, identified either by their flask session id or by a magic key 'localdev'
+
+auth = HTTPBasicAuth()
 
 irods_sessions = {}
 
@@ -48,7 +52,7 @@ from csrf import csrf
 from flask_bootstrap import Bootstrap5
 
 # Blueprints
-from kernel.user.user import user_bp
+from kernel.user.user import authorize_irods_credentials, user_bp
 from kernel.common.error import error_bp
 from kernel.common.browse import browse_bp
 from kernel.metadata.metadata import metadata_bp
@@ -252,28 +256,50 @@ def init_and_secure_views():
 
         return None
 
-    else:
-        irods_session = None
-        if not "userid" in session:
-            print(f"No user id in session, need auth")
-        if "userid" in session:
-            irods_session = irods_session_pool.get_irods_session(session["userid"])
+    irods_session = None
+    if "userid" in session:
+        # User has already authenticated, but the session may be expired
+        irods_session = irods_session_pool.get_irods_session(session["userid"])
 
-        if irods_session:
-            g.irods_session = irods_session
-            user_home = f"/{g.irods_session.zone}/home/{irods_session.username}"
-            zone_home = f"/{g.irods_session.zone}/home"
-            g.user_home = user_home
-            g.zone_home = zone_home
-            g.mango_server_info = mango_server_info
-            return None
-        else:
-            # save the request url which may come from a bookmark or a page that was iopen longer than the irods session lifetime
-            session["redirect_after_login"] = (
-                request.url
-            )  # this is with a http scheme, but gets rewritten as https
-            print(f"Request url before login {request.url}")
-            return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
+    if irods_session:
+        g.irods_session = irods_session
+        g.user_home = f"/{g.irods_session.zone}/home/{irods_session.username}"
+        g.zone_home = f"/{g.irods_session.zone}/home"
+        g.mango_server_info = mango_server_info
+        return None
+    elif request.endpoint == "browse_bp.download_object":
+        # User is not authenticated, but this endpoint implements its own scheme
+        # which supports Basic Auth
+        authentication = auth.get_auth()
+        if not authentication:
+            return Response(
+                headers={
+                    "WWW-Authenticate": auth.authenticate_header(),
+                },
+                status=401,
+            )
+        zone = request.view_args["data_object_path"].lstrip("/").split("/")[0]
+        login_errors = authorize_irods_credentials(
+            authentication["username"],
+            authentication["password"],
+            zone,
+            session,
+        )
+        if login_errors:
+            return login_errors
+        g.irods_session = irods_session_pool.get_irods_session(session["userid"])
+        g.user_home = f"/{g.irods_session.zone}/home/{g.irods_session.username}"
+        g.zone_home = f"/{g.irods_session.zone}/home"
+        g.mango_server_info = mango_server_info
+        return None
+    else:
+        print(f"No user id in session, need auth")
+        # save the request url which may come from a bookmark or a page that was iopen longer than the irods session lifetime
+        session["redirect_after_login"] = (
+            request.url
+        )  # this is with a http scheme, but gets rewritten as https
+        print(f"Request url before login {request.url}")
+        return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
 
 
 @app.after_request
