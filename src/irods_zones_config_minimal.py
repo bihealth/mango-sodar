@@ -7,7 +7,7 @@ API_URL = os.environ.get(
 )
 API_TOKEN = os.environ.get("API_TOKEN", "")
 
-DEFAULT_IRODS_PARAMETERS = {"port": 1247, "irods_authentication_scheme": "native"}
+DEFAULT_IRODS_PARAMETERS = {"port": 1247}
 # {   "port": 1247,
 #     "irods_authentication_scheme": "PAM",
 #     "irods_ssl_ca_certificate_file": "",
@@ -32,12 +32,19 @@ DEFAULT_SSL_PARAMETERS = {}
 
 # Dict of irods zones
 irods_zones = {
-    "tempZone": {
+    "sodarZone": {
         "parameters": {
-            "host": "localhost",
-            "zone": "tempZone",
+            "host": os.environ.get("IRODS_HOST", "127.0.0.1"),
+            "port": os.environ.get("IRODS_PORT", 1247),
+            "zone": "sodarZone",
+            "authentication_scheme": "pam_password",
+            "ssl_ca_certificate_file": "/etc/traefik/tls/server.crt",
+            "ssl_verify_server": "none",
         },
-        "ssl_settings": {},
+        "ssl_settings": {
+            "client_server_negotiation": "off",
+            "client_server_policy": "CS_NEG_REFUSE",
+        },
         "admin_users": [],
         "logo": "mango-logo.png",  # path in static folder
         "splash_image": "inca_quipu.jpg",

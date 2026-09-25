@@ -1,0 +1,29 @@
+services:
+  tika:
+    image: apache/tika:3.3.1.0-full
+    ports:
+      - 9998:9998
+    restart: unless-stopped
+
+  mango:
+    image: ghcr.io/bihealth/mango-sodar:dev-0
+    build: .
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DEBUG: true
+      MANGO_AUTH: "login"
+      IRODS_HOST: $IRODS_HOST
+      IRODS_PORT: $IRODS_PORT
+      SECRET_KEY: $MANGO_SECRET_KEY
+      TIKA_URL: "http://tika:9998"
+    volumes:
+      - type: bind  # Traefik configuration for shared certs
+        source: $IRODS_SSL_CA_CERTIFICATE_PATH
+        target: /etc/traefik/tls/server.crt
+      - type: bind  # Mount local files during development
+        source: ./src
+        target: /app
