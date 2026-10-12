@@ -1,0 +1,150 @@
+---
+zone: tier1_data_pilot
+
+
+# my_gallery_view_override_for_collections:
+#   source: common/collection_view.html.j2
+#   target: myplugin/gallery.html.j2
+#   matches:
+#     any:
+#       metadata:
+#         match_type: any
+#         items:
+#           - mg.collection_type:
+#             - gallery
+#             - images
+#           - mg.otheravu: hello
+#       name:
+#         - gallery
+#       subtree:
+#         - /a/e/f
+#         - /gg/d/f
+#     all:
+#       path: /a/b/c
+#       metadata:
+#         match_type: any
+#         items:
+#           - mg.collection_type:
+#             - gallery
+#           - mg.anything: something
+
+# match_all_collections:
+#   source: common/collection_view.html.j2
+#   target: overrides/collection_browse.html.j2
+#   matches:
+#     always: true
+
+---
+zone: cold
+
+cold_collections:
+  source: common/collection_view.html.j2
+  target: cold_storage/project_view.html.j2
+  matches: always
+
+cold_objects:
+  source: common/object_view.html.j2
+  target: cold_storage/object_view.html.j2
+  matches: always
+
+cold_sidebar:
+  source: sidebar.html.j2
+  target: cold_storage/cold_sidebar.html.j2
+  matches: always
+
+cold_index:
+  source: user_tantra/index.html.j2
+  target: cold_storage/index.html.j2
+  matches: always
+
+---
+zone: cold_gateway
+
+gateway_sidebar:
+  source: sidebar.html.j2
+  target: cold_storage/gateway/gateway_sidebar.html.j2
+  matches: always
+
+gateway_collection:
+  source: common/collection_view.html.j2
+  target: cold_storage/gateway/collection_view.html.j2
+  matches: always
+
+gateway_objects:
+  source: common/object_view.html.j2
+  target: cold_storage/gateway/object_view.html.j2
+  matches: always
+---
+zone: icts_demo
+
+
+# collection_view_iot:
+#   source: collection_view
+#   target: collection_iot.html.j2
+#   matches:
+#     always: true
+---
+zone: all
+
+collection_home_simple:
+  source: common/collection_view.html.j2
+  target: common/collection_view_content_only.html.j2
+  matches:
+    any:
+      path: "/{{zone}}/home"
+
+gallery_carrousel:
+  source: common/collection_view.html.j2
+  target: common/gallery_carrousel.html.j2
+  matches:
+    all:
+      metadata:
+        match_type: any
+        items:
+          - mg.collection_type: gallery_carrousel
+collection_view_trash:
+  source: common/collection_view.html.j2
+  target: common/collection_view_trash.html.j2
+  matches:
+    all:
+      subtree: "/{{zone}}/trash" #quotes needed as in principle {} are special characters
+object_view_trash:
+  source: common/object_view.html.j2
+  target: common/object_view_trash.html.j2
+  matches:
+    all:
+      subtree: "/{{zone}}/trash"
+
+realm_powered_side_bar:
+  source: sidebar.html.j2
+  target: user_tantra/sidebar.html.j2
+  matches: always
+
+user_profile:
+  source: user/myprofile.html.j2
+  target: mango_overrides/user/myprofile.html.j2
+  matches: always
+
+base_template_header:
+  source: header.html.j2
+  target: mango_overrides/header.html.j2
+  matches: always
+
+group_members:
+  source: user/group_members.html.j2
+  target: mango_overrides/user/group_members.html.j2
+  matches: always
+
+gallery_view_dayral_barsha:
+  source: collection_content.html.j2
+  target: collection_gallery.html.j2
+  matches:
+    all:
+      subtree: "/{{zone}}/home/Dayral-Barsha" #quotes needed as in principle {} are special characters
+
+gallery_view_search_dayral_barsha:
+  source: search/basic_catalog_search.html.j2
+  target: search/gallery_catalog_search.html.j2
+  matches:
+    all:
+      subtree: "/{{zone}}/home/Dayral-Barsha" #quotes needed as in principle {} are special characters

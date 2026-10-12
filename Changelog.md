@@ -2,6 +2,40 @@
 
 Note: versioning follows Semver standard with 3 levels
 
+## Release 0.29.1 (2026-06-22)
+
+### Bug fixes
+
+- schema manager would not load all schemas
+
+### New features
+
+- CSRF handling now with error handler and flash message, no longer a dull page
+
+
+## Release 0.29.0 (2026-06-19)
+
+### Upgrades
+
+- VIP plugin: Cold Storage aka FriGO major refactoring 
+
+
+## Release 0.28.2
+
+### Upgrades
+
+- dependent packages, some addressing CVE vulnerabilities
+
+## Release 0.28.1
+
+### New feature/bugfix
+
+- performance improvement by proactive caching of schemas to feed the new search form
+
+### Other
+
+- blueprint imports re-ordering
+
 ## Release 0.28.0
 
 ### New feature
