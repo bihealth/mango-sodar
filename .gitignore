@@ -68,7 +68,7 @@ src/storage
 src/scratch
 
 
-.gitignore
+.env
 .cache
 .eslintrc.json
 package-lock.json
