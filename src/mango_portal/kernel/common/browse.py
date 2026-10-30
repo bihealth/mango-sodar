@@ -4,6 +4,7 @@ import json
 import logging
 import mimetypes
 import os
+import random
 import re
 import tarfile
 import tempfile
@@ -11,6 +12,7 @@ import time
 from collections import Counter, namedtuple
 from collections.abc import Mapping
 from operator import itemgetter
+from string import ascii_lowercase, digits
 from pathlib import Path, PurePath
 from urllib.parse import unquote
 
@@ -847,7 +849,7 @@ def download_object(data_object_path):
         mimetype = object_type
         status = 200
     else:
-        boundary = "5489031543arb"
+        boundary = "".join(random.choices(ascii_lowercase + digits, k=24))
         stream = stream_with_context(data_object_chunks_ranged(read_buffer_size, ranges, boundary))
         mimetype = f"multipart/byteranges; boundary={boundary}"
         status = 206
