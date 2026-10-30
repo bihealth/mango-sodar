@@ -7,9 +7,8 @@ admin_navbar_entries = {}
 
 print("loading mango_ui config from config/mango_ui.yml")
 
-try:
-    mango_ui_cfg_path = pathlib.Path("config/mango_ui.yml")
-except Exception:
+mango_ui_cfg_path = pathlib.Path("config/mango_ui.yml")
+if not mango_ui_cfg_path.is_file():
     print("config/mango_ui.yml not found, using default config")
     mango_ui_cfg_path = pathlib.Path(__file__).parent / "config/mango_ui.yml"
     print(f"using default config from {mango_ui_cfg_path}")
