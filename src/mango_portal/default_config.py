@@ -65,7 +65,9 @@ MANGO_ADMINS = [
     "rods"
 ]
 
-MANGO_MAIN_LANDING_ROUTE = {"module": "mango_portal.plugins.user_tantra.realm", "function": "index"}
+# MANGO_MAIN_LANDING_ROUTE = {"module": "mango_portal.plugins.user_tantra.realm", "function": "index"}
+# MANGO_MAIN_LANDING_ROUTE = {"module": "mango_portal.kernel.common.browse", "function": "index"}
+MANGO_MAIN_LANDING_ROUTE = {"module": "mango_portal.kernel.common.browse", "function": "collection_browse"}
 MANGO_SCHEMA_PERMISSIONS_MANAGER_CLASS = {
     "module": "mango_portal.kernel.metadata_schema.base",
     "class": "GroupBasedSchemaPermissions",
