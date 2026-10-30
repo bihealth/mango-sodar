@@ -1,6 +1,7 @@
 import collections
 import json
 import logging
+from flask import Flask
 
 # create a Thread to periodically refresh the realm schemas
 import threading
