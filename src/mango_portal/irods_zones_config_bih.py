@@ -1,10 +1,10 @@
 import os
 import ssl
 
-API_URL = os.environ.get(
-    "API_URL", "https://icts-p-coz-data-platform-api.cloud.icts.kuleuven.be"
-)
-API_TOKEN = os.environ.get("API_TOKEN", "")
+# API_URL = os.environ.get(
+#     "API_URL", "https://icts-p-coz-data-platform-api.cloud.icts.kuleuven.be"
+# )
+# API_TOKEN = os.environ.get("API_TOKEN", "")
 
 DEFAULT_IRODS_PARAMETERS = {"port": 1247}
 # {   "port": 1247,
