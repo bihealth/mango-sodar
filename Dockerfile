@@ -40,4 +40,4 @@ RUN pip install uv==0.11.23
 RUN uv sync
 
 EXPOSE 80 3000
-CMD ["uv", "run", "waitress-serve", "--host", "0.0.0.0", "--port", "3000", "src.mango_portal.app:app"]
+CMD ["uv", "run", "waitress-serve", "--host", "0.0.0.0", "--port", "3000", "--url-prefix", "/mango", "src.mango_portal.app:app"]
