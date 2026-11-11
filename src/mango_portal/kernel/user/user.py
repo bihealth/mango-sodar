@@ -141,7 +141,7 @@ def login_basic():
             irods_session.set_auth_option_for_scheme("pam_password", ENSURE_SSL_IS_ACTIVE, False)
 
         except Exception as e:
-            print(e)
+            app.logger.info(e)
             flash("Could not create iRODS session", category="danger")
             return render_template("user/login_basic.html.j2")
 
@@ -151,12 +151,12 @@ def login_basic():
             # irods_session.collections.get(f"/{irods_session.zone}/home")
             irods_session.collections.get(f"/{irods_session.zone}/home/{username}")
         except PAM_AUTH_PASSWORD_FAILED as e:
-            print(e)
+            app.logger.info(e)
             flash("Authentication failed: invalid password", category="danger")
             return render_template("user/login_basic.html.j2")
 
         except Exception as e:
-            print(e)
+            app.logger.info(e)
             flash("Authentication failed: " + str(e))
             return render_template("user/login_basic.html.j2", category="danger")
 
