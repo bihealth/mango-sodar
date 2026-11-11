@@ -9,6 +9,5 @@ os.environ.setdefault("IRODS_SSL_CA_CERTIFICATE_PATH", "/path/to/irods/server.cr
 os.environ.setdefault("SECRET_KEY", uuid4())
 # os.environ.setdefault("FLASK_DEBUG_TOOLBAR", "enabled")
 
-app = get_app(
-    static_folder="static",
-)
+app = get_app(static_folder="static")
+app.config.update(APPLICATION_ROOT="/mango")
