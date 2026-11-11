@@ -1,4 +1,4 @@
-src/node_modules
 src/storage/*
 **/.git
-
+Dockerfile
+docker-compose.yml
