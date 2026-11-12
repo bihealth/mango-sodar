@@ -6,6 +6,7 @@ ARG IRODS_PKG_VERSION="4.3.5"
 ARG IRODS_PKG_SUFFIX="-0~bookworm"
 
 ENV spOption="ManGO_portal"
+ENV MANGO_URL_PREFIX="/"
 
 WORKDIR /app
 
@@ -40,4 +41,4 @@ RUN pip install uv==0.11.23
 RUN uv sync
 
 EXPOSE 80 3000
-CMD ["uv", "run", "waitress-serve", "--host", "0.0.0.0", "--port", "3000", "src.mango_portal.app:app"]
+CMD uv run waitress-serve --host 0.0.0.0 --port 3000 --url-prefix ${MANGO_URL_PREFIX} src.mango_portal.app:app
