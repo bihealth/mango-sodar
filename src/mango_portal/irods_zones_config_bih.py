@@ -1,5 +1,10 @@
+import logging
 import os
 import ssl
+from typing import Optional
+
+from irods.session import iRODSSession
+from mango_lib.irods.auth import ZoneType, ClientUserType
 
 # API_URL = os.environ.get(
 #     "API_URL", "https://icts-p-coz-data-platform-api.cloud.icts.kuleuven.be"
@@ -49,3 +54,18 @@ irods_zones = {
         "splash_image": "inca_quipu.jpg",
     },
 }
+
+def sodar_get_zone_operator_session(
+    zone: Optional[ZoneType] = None,
+    client_user: Optional[ClientUserType] = None,
+    **kwargs
+):
+    logging.info("Logging in as iRods admin in SODAR zone operator session...")
+    return iRODSSession(
+        user=os.environ.get("IRODS_USER", "rods"),
+        password=os.environ.get("IRODS_PASS", "rods"),
+        host=os.environ.get("IRODS_HOST", "127.0.0.1"),
+        port=os.environ.get("IRODS_PORT", 1247),
+        zone="sodarZone",
+        authentication_scheme="native",
+    )

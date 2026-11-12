@@ -18,7 +18,7 @@ To build the image, use the following command:
 MANGO_VERSION=x.x.x BUILD_VERSION=z ./build.sh
 ```
 
-### Running ManGO
+### Running ManGO standalone
 
 The docker-compose.yml file provides a baisc development setup for ManGO. It
 includes Apache Tika as a supporting service, runs a Docker image with all the
@@ -30,10 +30,13 @@ below to run ManGO on the host directly.
 - Make sure that irods is running and accessible from the host.
 - Obtain the irods server certificate and save its path in the environment
   variable IRODS_SSL_CA_CERTIFICATE_PATH.
-- From the ./src directory, `npm install` (only the first time) and `npm
-  build` every time the Vue app changes (note that src/static/dist is also
-  tracked in git).
 - Run `docker compose up` and point your browser to http://localhost:3000.
+
+### Running as part of SODAR
+
+Clone the [sodar-docker-compose](https://github.com/bihealth/sodar-docker-compose)
+repository and follow the instructions therein to set up and configure SODAR.
+Run the development stack with `./run_dev_mango.sh`.
 
 ---
 

@@ -17,14 +17,17 @@ services:
       DEBUG: true
       MANGO_AUTH: "login"
       MANGO_URL_PREFIX: ${MANGO_URL_PREFIX}
-      IRODS_HOST: $IRODS_HOST
-      IRODS_PORT: $IRODS_PORT
-      IRODS_ZONES_CONFIG: $MANGO_IRODS_ZONES_CONFIG
+      IRODS_HOST: ${IRODS_HOST}
+      IRODS_PORT: ${IRODS_PORT}
+      IRODS_USER: ${IRODS_USER}
+      IRODS_PASS: ${IRODS_PASS}
+      IRODS_ZONES_CONFIG: ${MANGO_IRODS_ZONES_CONFIG}
+      MANGO_GET_ZONE_OPERATOR_SESSION_FUNCTION: "mango_portal.irods_zones_config_bih:sodar_get_zone_operator_session"
       SECRET_KEY: $MANGO_SECRET_KEY
       TIKA_URL: "http://tika:9998"
     volumes:
       - type: bind  # Traefik configuration for shared certs
-        source: $IRODS_SSL_CA_CERTIFICATE_PATH
+        source: ${IRODS_SSL_CA_CERTIFICATE_PATH}
         target: /etc/traefik/tls/server.crt
       - type: bind  # Mount local files during development
         source: ./
