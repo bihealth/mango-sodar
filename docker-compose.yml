@@ -16,6 +16,7 @@ services:
     environment:
       DEBUG: true
       MANGO_AUTH: "login"
+      MANGO_URL_PREFIX: ${MANGO_URL_PREFIX}
       IRODS_HOST: $IRODS_HOST
       IRODS_PORT: $IRODS_PORT
       IRODS_ZONES_CONFIG: $MANGO_IRODS_ZONES_CONFIG
