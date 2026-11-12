@@ -1,6 +1,7 @@
 import collections
 import json
 import logging
+from flask import Flask
 
 # create a Thread to periodically refresh the realm schemas
 import threading
@@ -145,7 +146,9 @@ def queue_realm_schemas_updates_upon_login(sender, **parameters):
     #     f"Updating realm schemas for user {username} in zone {zone} upon login"
     # )
     user_session = get_zone_operator_session(zone, client_user=username)
-    user_realms = user_session.collections.get(f"/{zone}/home").subcollections
+    # user_realms = user_session.collections.get(f"/{zone}/home").subcollections
+    user_projects = user_session.genquery2("SELECT COLL_NAME WHERE COLL_NAME LIKE '/sodarZone/projects/%'")
+    user_realms = [user_session.collections.get(c[0]) for c in user_projects if c[0].count('/') == 4]
     realm_names_to_check = [
         realm.name for realm in user_realms if realm.name != "public"
     ]

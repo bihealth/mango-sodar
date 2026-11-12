@@ -3,8 +3,8 @@ from cachelib import FileSystemCache
 import uuid
 
 MANGO_AUTH = os.environ.get("MANGO_AUTH", "login")  # "localdev" or "login"
-MANGO_LOGIN_ACTION = "mango_portal.kernel.user.user_bp.login_basic"
-MANGO_LOGOUT_ACTION = "mango_portal.kernel.user.user_bp.logout_basic"
+MANGO_LOGIN_ACTION = "user_bp.login_basic"
+MANGO_LOGOUT_ACTION = "user_bp.logout_basic"
 SECRET_KEY = os.environ.get("SECRET_KEY", str(uuid.uuid4()))
 DATA_OBJECT_MAX_SIZE_PREVIEW = 1024 * 1024 * 128  # 128MiB
 DATA_OBJECT_MAX_SIZE_DOWNLOAD = 1024 * 1024 * 1024 * 50  # 50GiB
@@ -65,7 +65,9 @@ MANGO_ADMINS = [
     "rods"
 ]
 
-MANGO_MAIN_LANDING_ROUTE = {"module": "mango_portal.plugins.user_tantra.realm", "function": "index"}
+# MANGO_MAIN_LANDING_ROUTE = {"module": "mango_portal.plugins.user_tantra.realm", "function": "index"}
+# MANGO_MAIN_LANDING_ROUTE = {"module": "mango_portal.kernel.common.browse", "function": "index"}
+MANGO_MAIN_LANDING_ROUTE = {"module": "mango_portal.kernel.common.browse", "function": "collection_browse"}
 MANGO_SCHEMA_PERMISSIONS_MANAGER_CLASS = {
     "module": "mango_portal.kernel.metadata_schema.base",
     "class": "GroupBasedSchemaPermissions",
