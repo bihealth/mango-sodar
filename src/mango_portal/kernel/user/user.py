@@ -10,6 +10,7 @@ from flask import (
     session,
     url_for,
 )
+from irods.auth.pam_password import ENSURE_SSL_IS_ACTIVE
 from irods.session import iRODSSession
 from irods.exception import PAM_AUTH_PASSWORD_FAILED
 from ..template_overrides import get_template_override_manager
@@ -31,6 +32,79 @@ DEFAULT_SSL_PARAMETERS = irods_zone_config_module.DEFAULT_SSL_PARAMETERS
 user_bp = Blueprint(
     "user_bp", __name__, static_folder="static/user", template_folder="templates"
 )
+
+
+def authorize_irods_credentials(username, password, zone, session, success=None):
+    """
+    Log-in wiht iRODS credentials
+
+    Verify the username and password for the specified iRODS zone. If user is
+    valid, add its credentials to the Flask session and its iRODS session to the
+    global session pool.
+
+    :param username: iRODS user name.
+    :param password: iRODS password.
+    :param zone: iRODS zone.
+    :param session: Flask session, where user credentials are saved.
+    :param success: Value to be returned in case of successful log in.
+    :return: ``success`` if the credentials are valid, otherwise a redirect
+             to an error view.
+    """
+    if username == "":
+        flash("Missing user id", category="danger")
+        return render_template("user/login_basic.html.j2")
+    if password == "":
+        flash("Missing password", category="danger")
+        return render_template("user/login_basic.html.j2")
+    connection_info = irods_connection_info(
+        zone=zone, username=username, password=password
+    )
+
+    try:
+        irods_session = iRODSSession(
+            user=username,
+            password=password,
+            **connection_info["parameters"],
+            **connection_info["ssl_settings"],
+        )
+        irods_session.set_auth_option_for_scheme(
+            "pam_password",
+            ENSURE_SSL_IS_ACTIVE,
+            os.getenv(IRODS_ENSURE_SSL_IS_ACTIVE, True),
+        )
+    except Exception as e:
+        print(e)
+        flash("Could not create iRODS session", category="danger")
+        return render_template("user/login_basic.html.j2")
+
+    # sanity check on credentials
+    try:
+        irods_session.collections.get(f"/{irods_session.zone}/home/{username}")
+    except PAM_AUTH_PASSWORD_FAILED as e:
+        print(e)
+        flash("Authentication failed: invalid password", category="danger")
+        return render_template("user/login_basic.html.j2")
+    except Exception as e:
+        print(e)
+        flash("Authentication failed: " + str(e))
+        return render_template("user/login_basic.html.j2", category="danger")
+
+    # should be ok now to add session to pool
+    irods_session_pool.add_irods_session(username, irods_session)
+    session["userid"] = username
+    session["password"] = password
+    session["zone"] = irods_session.zone
+    irods_session_pool.irods_node_logins += [
+        {
+            "userid": username,
+            "zone": irods_session.zone,
+            "login_time": datetime.now(),
+        }
+    ]
+    logging.info(
+        f"User {irods_session.username}, zone {irods_session.zone} logged in"
+    )
+    return success
 
 
 @user_bp.route("/user/groups")
@@ -119,61 +193,15 @@ def login_basic():
         password = request.form.get("password", "").strip()
         zone = request.form.get("irods_zone")
 
-        if username == "":
-            flash("Missing user id", category="danger")
-            return render_template("user/login_basic.html.j2")
-        if password == "":
-            flash("Missing password", category="danger")
-            return render_template("user/login_basic.html.j2")
-
-        connection_info = irods_connection_info(
-            zone=zone, username=username, password=password
-        )
-
-        try:
-            irods_session = iRODSSession(
-                user=username,
-                password=password,
-                **connection_info["parameters"],
-                **connection_info["ssl_settings"],
-            )
-
-        except Exception as e:
-            print(e)
-            flash("Could not create iRODS session", category="danger")
-            return render_template("user/login_basic.html.j2")
-
-        # sanity check on credentials
-        try:
-            irods_session.collections.get(f"/{irods_session.zone}/home")
-        except PAM_AUTH_PASSWORD_FAILED as e:
-            print(e)
-            flash("Authentication failed: invalid password", category="danger")
-            return render_template("user/login_basic.html.j2")
-
-        except Exception as e:
-            print(e)
-            flash("Authentication failed: " + str(e))
-            return render_template("user/login_basic.html.j2", category="danger")
-
-        # should be ok now to add session to pool
-        irods_session_pool.add_irods_session(username, irods_session)
-        session["userid"] = username
-        session["password"] = password
-        session["zone"] = irods_session.zone
-
-        irods_session_pool.irods_node_logins += [
-            {
-                "userid": username,
-                "zone": irods_session.zone,
-                "login_time": datetime.now(),
-            }
-        ]
-        logging.info(
-            f"User {irods_session.username}, zone {irods_session.zone} logged in"
-        )
-
-    return redirect(url_for("index"))
+    # Redirect to the referer after logging in
+    redirect_after_login = session.pop("redirect_after_login", url_for("index"))
+    return authorize_irods_credentials(
+        username,
+        password,
+        zone,
+        session,
+        success=redirect(redirect_after_login),
+    )
 
 
 def irods_connection_info(zone, username, password):
