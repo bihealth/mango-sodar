@@ -56,13 +56,14 @@ lib/vsc_irods
 # local python environment
 venv
 .venv
+# local environment variables
+.env
 #Node modules
 node_modules
 #Vue build files
 #src/static/dist
 # Anything in storage
-src/storage
-src/scratch
+storage
 
 dist/
 

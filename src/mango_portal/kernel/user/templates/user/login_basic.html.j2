@@ -15,7 +15,7 @@ div#login-form {
             <div class="col-md-9 rounded-3" id="login-form">
                 <h3>Login to Mango, your iRODS Active Data Repository</h3>
                 <p class="mb-4">Please use the password provided by the VSC/KU Leuven iRODS login service</p>
-                <form action="{{ url_for('user_bp.login_basic') }}"" method="post">
+                <form action="{{ url_for('user_bp.login_basic') }}" method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="form-group">
                         <label for="username">User id</label>
