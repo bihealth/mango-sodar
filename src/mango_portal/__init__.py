@@ -53,6 +53,7 @@ def get_app(
         os.getenv("IRODS_ZONES_CONFIG", "mango_portal.irods_zones_config")
     )
     app.config["irods_zones"] = irods_zone_config_module.irods_zones
+    app.config["DEFAULT_IRODS_ZONE"] = os.getenv("MANGO_DEFAULT_IRODS_ZONE")
 
     # Initialize Jinja extensions
     app.jinja_env.add_extension(MangoJinjaExtension)
@@ -239,6 +240,14 @@ def get_app(
                 g.zone_home = zone_home
                 g.mango_server_info = mango_server_info
                 return None
+            elif auth := request.authorization:
+                # Return None if Basic Auth succeeds, else redirect to login page
+                return authorize_irods_credentials(
+                    auth.username,
+                    auth.password,
+                    current_app.config["DEFAULT_IRODS_ZONE"],
+                    session,
+                )
             else:
                 # save the request url which may come from a bookmark or a page that was iopen longer than the irods session lifetime
                 session["redirect_after_login"] = (
