@@ -50,11 +50,14 @@ def authorize_irods_credentials(username, password, zone, session, success=None)
     :return: ``success`` if the credentials are valid, otherwise a redirect
              to an error view.
     """
-    if username == "":
+    if not username:
         flash("Missing user id", category="danger")
         return render_template("user/login_basic.html.j2")
-    if password == "":
+    if not password:
         flash("Missing password", category="danger")
+        return render_template("user/login_basic.html.j2")
+    if not zone:
+        flash("Missing zone", category="danger")
         return render_template("user/login_basic.html.j2")
     connection_info = irods_connection_info(
         zone=zone, username=username, password=password
