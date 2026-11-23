@@ -1,3 +1,55 @@
+## ManGO-SODAR
+
+**This is a fork of KU Leuven's [ManGO portal](https://github.com/kuleuven/mango-portal)**.
+Find the original README [below](#mango-an-irods-python-client-based-portal).
+
+The repository is organized in the following branches:
+
+1. *development* is kept in sync with the *development* branch of the upstream
+  repository. It contains basic updates necessary to make ManGO run outside of
+  the KU-Leuven environment.
+2. *upstream* contains features that could, in principle, be contributed to the
+  upstream repository.
+3. *sodar*, based on *development*, contains configuration specific for
+  [SODAR](https://github.com/bihealth/sodar-server).
+4. *deploy* merges *upstream* and *sodar* into a branch that represents the
+  ManGO app as we deploy it.
+
+### First-time setup
+
+Copy env.example to .env and update the environment variables as appropriate for
+your setup.
+
+### Building the Docker image
+
+To build the image, use the following command:
+
+```bash
+MANGO_VERSION=x.x.x BUILD_VERSION=z ./build.sh
+```
+
+### Running ManGO standalone
+
+The docker-compose.yml file provides a basic development setup for ManGO. It
+includes Apache Tika as a supporting service, runs a Docker image with all the
+system dependencies, and mounts the local ./src directory into the container, so
+that any edits will be effective without re-building the image. Instead of using
+our Docker compose, you may also follow the instructions in the original Readme
+below to run ManGO on the host directly.
+
+- Make sure that irods is running and accessible from the host.
+- Obtain the irods server certificate and save its path in the environment
+  variable IRODS_SSL_CA_CERTIFICATE_PATH.
+- Run `docker compose up` and point your browser to http://localhost:3000.
+
+### Running as part of SODAR
+
+Clone the [sodar-docker-compose](https://github.com/bihealth/sodar-docker-compose)
+repository and follow the instructions therein to set up and configure SODAR.
+Run the development stack with `./run_dev_mango.sh`.
+
+---
+
 ## ManGO: an iRODS Python Client based portal
 
 > UPDATE: 2026-10-02 BREAKING CHANGES
