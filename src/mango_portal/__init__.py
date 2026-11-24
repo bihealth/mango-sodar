@@ -4,6 +4,90 @@ import logging
 import os
 import platform
 
+from flask import Response, current_app, flash, render_template, redirect, url_for, g, session
+from irods.auth.pam_password import ENSURE_SSL_IS_ACTIVE
+from irods.exception import PAM_AUTH_PASSWORD_FAILED
+from irods.session import iRODSSession
+
+
+def authorize_irods_credentials(username, password, zone, irods_session_pool, irods_zones_config, success=None):
+    """
+    Log-in wiht iRODS credentials
+
+    Verify the username and password for the specified iRODS zone. If user is
+    valid, add its credentials to the Flask session and its iRODS session to the
+    global session pool.
+
+    :param username: iRODS user name.
+    :param password: iRODS password.
+    :param zone: iRODS zone.
+    :param session: Flask session, where user credentials are saved.
+    :param success: Value to be returned in case of successful log in.
+    :return: ``success`` if the credentials are valid, otherwise a redirect
+             to an error view.
+    """
+    if not username:
+        flash("Missing user id", category="danger")
+        return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
+    if not password:
+        flash("Missing password", category="danger")
+        return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
+    if not zone:
+        flash("Missing zone", category="danger")
+        return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
+
+    try:
+        irods_session = iRODSSession(
+            user=username,
+            password=password,
+            **irods_zones_config[zone]["parameters"],
+            **irods_zones_config[zone]["ssl_settings"],
+        )
+        irods_use_ssl = bool(int(os.getenv("IRODS_ENSURE_SSL_IS_ACTIVE", '1')))
+        irods_session.set_auth_option_for_scheme(
+            "pam_password",
+            ENSURE_SSL_IS_ACTIVE,
+            irods_use_ssl,
+        )
+    except Exception as e:
+        logging.info(e)
+        flash("Could not create iRODS session", category="danger")
+        return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
+
+    # sanity check on credentials
+    try:
+        irods_session.collections.get(f"/{irods_session.zone}/home/{username}")
+    except PAM_AUTH_PASSWORD_FAILED as e:
+        logging.info(e)
+        flash("Authentication failed: invalid password", category="danger")
+        return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
+    except Exception as e:
+        logging.info(e)
+        flash("Authentication failed: " + str(e))
+        return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
+
+    # should be ok now to add session to pool
+    irods_session_pool.add_irods_session(username, irods_session)
+    session["userid"] = username
+    session["password"] = password
+    session["zone"] = irods_session.zone
+    irods_session_pool.irods_node_logins += [
+        {
+            "userid": username,
+            "zone": irods_session.zone,
+            "login_time": datetime.datetime.now(),
+        }
+    ]
+    g.irods_session = irods_session
+    user_home = f"/{g.irods_session.zone}/home/{irods_session.username}"
+    zone_home = f"/{g.irods_session.zone}/home"
+    g.user_home = user_home
+    g.zone_home = zone_home
+    logging.info(
+        f"User {irods_session.username}, zone {irods_session.zone} logged in"
+    )
+    return success
+
 
 def get_app(
     config_module_name: str | None = None,
@@ -15,16 +99,7 @@ def get_app(
 
     import flask
     import irods
-    from flask import (
-        Flask,
-        current_app,
-        g,
-        redirect,
-        render_template,
-        request,
-        session,
-        url_for,
-    )
+    from flask import Flask, request
     from flask_bootstrap import Bootstrap5
     from flask_cors import CORS
     from flask_session import Session
@@ -201,6 +276,7 @@ def get_app(
         g.flask_version = flask.__version__
         g.python_version = platform.python_version()
         g.mango_version = version.__version__
+        g.mango_alert = os.getenv("MANGO_GLOBAL_ALERT")
 
         # check sessions cleanup daemon and spawn a new one if needed
         irods_session_pool.check_and_restart_cleanup()
@@ -246,15 +322,23 @@ def get_app(
                     auth.username,
                     auth.password,
                     current_app.config["DEFAULT_IRODS_ZONE"],
-                    session,
+                    irods_session_pool,
+                    current_app.config["irods_zones"],
                 )
             else:
                 # save the request url which may come from a bookmark or a page that was iopen longer than the irods session lifetime
                 session["redirect_after_login"] = (
                     request.url
                 )  # this is with a http scheme, but gets rewritten as https
-                print(f"Request url before login {request.url}")
-                return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
+                return Response(
+                    render_template("user/login_basic.html.j2"),
+                    status=401,
+                    direct_passthrough=True,
+                    headers={"WWW-Authenticate": "Basic realm=mango-sodar"},
+                )
+            # else:
+            #     print(f"Request url before login {request.url}")
+            #     return redirect(url_for(current_app.config["MANGO_LOGIN_ACTION"]))
 
     @app.after_request
     def release_irods_session_lock(response):
