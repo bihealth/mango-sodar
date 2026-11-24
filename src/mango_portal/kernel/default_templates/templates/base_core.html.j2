@@ -62,6 +62,13 @@
             </div>
           {% endif %}
         {% endwith %}
+        {% if g.mango_alert %}
+          <div class="col-9">
+            <div class="alert alert-primary" role="alert">
+              {{ g.mango_alert }}
+            </div>
+          </div>
+        {% endif %}
         <div class="col-9">
           <div class="bg-light border rounded-3 p-3">
             {% block body %}{% endblock %}
