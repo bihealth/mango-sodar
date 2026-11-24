@@ -91,17 +91,21 @@
           {% if 'irods_session' in g %}
             {% include "sidebar.html.j2"|mango_template(g.irods_session.zone) %}
             <div class="col-9">
-            {% else %}
-              <div class="col">
+          {% else %}
+            <div class="col">
+          {% endif %}
+              {% if g.mango_alert %}
+                <div class="alert alert-primary" role="alert">
+                  {{ g.mango_alert }}
+                </div>
               {% endif %}
-              {# <div class="col-8 overflow-auto h-100"> #}
               <div class="bg-light border rounded-3 p-3">
                 {% block body %}{# THE MEAT #}{% endblock %}
               </div>
-            </div>
           </div>
+        </div>
 
-        </main>
+      </main>
       {% endblock container %}
       {% block footer %}
       {% endblock footer %}
