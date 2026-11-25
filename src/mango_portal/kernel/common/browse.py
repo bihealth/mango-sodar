@@ -782,8 +782,8 @@ def download_object(data_object_path):
         data_object_path = "/" + data_object_path
 
     data_object = g.irods_session.data_objects.get(data_object_path)
-    # Abort for too large files, 50GB limit for now
-    if data_object.size > 50 * 1024 * 1024 * 1024:  # 50GB
+    # Abort for too large files (limit set by app config)
+    if data_object.size > current_app.config["MAX_DOWNLOAD_FILE_SIZE"]:
         return abort(413)
     (object_type, object_encoding) = mimetypes.guess_type(data_object.name)
     if object_type is None:
