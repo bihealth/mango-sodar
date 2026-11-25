@@ -25,9 +25,30 @@ your setup.
 To build the image, use the following command:
 
 ```bash
-MANGO_VERSION=x.x.x BUILD_VERSION=z ./build.sh
+MANGO_SODAR_VERSION=xxx BUILD_VERSION=yyy ./build.sh
 ```
 
+The version of the Docker image follows the following convention:
+
+```
+<ManGO version>-<ManGO-SODAR version>-<Docker build version>
+```
+
+where:
+
+- `ManGO version` is the latest tag of the upstream ManGO repository;
+- `ManGO SODAR version` is an integer that is incremented when we release new
+  changes on top of the upstream branch;
+- `Docker build version` is an integer that tracks the version of the Docker
+  build.
+
+The build.sh script is kept up-to-date with respect to the upstream ManGO
+releases. `MANGO_SODAR_VERSION` and `BUILD_VERSION` default to `dev` and `0`,
+respectively, which indicate development builds.
+
+The Docker image includes iRODS packages: their version can be set with the
+`IRODS_PKG_VERSION` environment variable.
+ 
 ### Running ManGO standalone
 
 The docker-compose.yml file provides a basic development setup for ManGO. It
@@ -46,7 +67,8 @@ below to run ManGO on the host directly.
 
 Clone the [sodar-docker-compose](https://github.com/bihealth/sodar-docker-compose)
 repository and follow the instructions therein to set up and configure SODAR.
-Run the development stack with `./run_dev_mango.sh`.
+Run the development stack with `./run_dev.sh`, and pass `MANGO_ENABLE` and
+`MANGO_URL` to the SODAR server.
 
 ---
 
