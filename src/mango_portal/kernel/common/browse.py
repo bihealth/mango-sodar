@@ -4,7 +4,6 @@ import json
 import logging
 import mimetypes
 import os
-import random
 import re
 import tarfile
 import tempfile
@@ -12,7 +11,6 @@ import time
 from collections import Counter, namedtuple
 from collections.abc import Mapping
 from operator import itemgetter
-from string import ascii_lowercase, digits
 from pathlib import Path, PurePath
 from urllib.parse import unquote
 import importlib
@@ -782,35 +780,22 @@ def download_object(data_object_path):
         data_object_path = "/" + data_object_path
 
     data_object = g.irods_session.data_objects.get(data_object_path)
-    # Abort for too large files (limit set by app config)
-    if data_object.size > current_app.config["MAX_DOWNLOAD_FILE_SIZE"]:
+    # Abort for too large files, 50GB limit for now
+    if data_object.size > 50 * 1024 * 1024 * 1024:  # 50GB
         return abort(413)
-    (object_type, object_encoding) = mimetypes.guess_type(data_object.name)
+    object_name = f"{data_object.name}"
+    (object_type, object_encoding) = mimetypes.guess_type(object_name)
     if object_type is None:
         object_type = "application/octet-stream"
 
     read_buffer_size = 2**24  # 16MiB
     print(f"Current read buffer size is {read_buffer_size}")
 
-    ranges = []
-    if range_header := request.headers.get("Range"):
-        unit, values = range_header.split("=")
-        if unit != "bytes":
-            return abort(416)
-        for bounds in values.split(","):
-            start, end = bounds.split("-")
-            start = int(start) if start else 0
-            end = int(end) if end else data_object.size - 1
-            if not 0 <= start <= end < data_object.size:
-                return abort(416)
-            ranges.append((start, end))
-
-    def data_object_chunks(read_buffer_size, start, end):
+    def data_object_chunks():
         with data_object.open("r") as f:
-            f.seek(start)
-            position = start
-            t_start = time.time()
-            while position < end:
+            position = 0
+            start = time.time()
+            while position < data_object.size:
                 read_bytes = min(
                     read_buffer_size,  # 64kB #g.irods_session.data_objects.READ_BUFFER_SIZE,  # typically 8MB
                     data_object.size - position,
@@ -819,60 +804,15 @@ def download_object(data_object_path):
                 bytes_read = len(file_chunk)
                 position += bytes_read
                 print(
-                    f"{data_object.name}: sending {position} bytes after {time.time() - t_start}"
+                    f"{data_object.name}: sending {position} bytes after {time.time() - start}"
                 )
                 yield file_chunk
 
-    def data_object_chunks_ranged(read_buffer_size, ranges, boundary):
-        with data_object.open("r") as f:
-            for start, end in ranges:
-                f.seek(start)
-                yield (
-                    b"\r\n--" + boundary.encode() + b"\r\n" +
-                    f"Content-Type: {object_type}".encode() + b"\r\n" +
-                    f"Content-Range: bytes {start}-{end}/{data_object.size-1}".encode() + b"\r\n\r\n"
-                )
-                position = start
-                t_start = time.time()
-                while position < end:
-                    read_bytes = min(
-                        read_buffer_size,  # 64kB #g.irods_session.data_objects.READ_BUFFER_SIZE,  # typically 8MB
-                        end - position + 1,
-                    )
-                    file_chunk = f.read(read_bytes)
-                    bytes_read = len(file_chunk)
-                    position += bytes_read
-                    print(
-                        f"{data_object.name}: sending {position} bytes after {time.time() - t_start}"
-                    )
-                    yield file_chunk
-            # Final closing boundary
-            yield b"\r\n--" + boundary.encode() + b"--\r\n"
-
-    headers={
-        "Content-Disposition": "attachment",
-        "Accept-Range": "bytes",
-    }
-    if len(ranges) == 0:
-        stream = stream_with_context(data_object_chunks(read_buffer_size, 0, data_object.size-1))
-        mimetype = object_type
-        status = 200
-    elif len(ranges) == 1:
-        stream = stream_with_context(data_object_chunks(read_buffer_size, *ranges[0]))
-        mimetype = object_type
-        status = 200
-    else:
-        boundary = "".join(random.choices(ascii_lowercase + digits, k=24))
-        stream = stream_with_context(data_object_chunks_ranged(read_buffer_size, ranges, boundary))
-        mimetype = f"multipart/byteranges; boundary={boundary}"
-        status = 206
-
     return Response(
-        stream,
-        mimetype=mimetype,
+        stream_with_context(data_object_chunks()),
+        mimetype=object_type,
         direct_passthrough=True,
-        headers=headers,
-        status=status,
+        headers={"Content-Disposition": "attachment"},
     )
 
 
@@ -969,10 +909,7 @@ def test_folder_upload(collection: str):
     pathlib_file = Path(file.filename)
     subcollection = Path(collection) / pathlib_file.parent
     try:
-        upload_with_stream(str(subcollection), pathlib_file.name, file.stream)
-        return make_response(
-            flask.jsonify({"file": file.filename, "status": "OK"}), 200
-        )
+        return upload_with_stream(str(subcollection), pathlib_file.name, file.stream)
     except Exception as e:
         return make_response(
             flask.jsonify({"file": file.filename, "status": f"Error: {e}"}), 400
@@ -986,26 +923,37 @@ def upload_with_stream(collection: str, filename: str, stream):
     data_object = irods_session.data_objects.create(
         f"{collection}/{filename}", force=True
     )
+    CHUNK_SIZE = 4 * 1024 * 1024
+    error = None
     with data_object.open(mode="w") as do_handle:
         total_bytes = 0
         start = time.perf_counter()
         while True:
-            CHUNK_SIZE = 4 * 1024 * 1024
             chunk = stream.read(CHUNK_SIZE)
             actual_chunk_length = len(chunk)
             total_bytes += actual_chunk_length
             if actual_chunk_length == 0:
+                break
+            if total_bytes >= current_app.config["MAX_UPLOAD_FILE_SIZE"]:
+                error = f"File size exceeded {current_app.config['MAX_UPLOAD_FILE_SIZE']} bytes"
                 break
             do_handle.write(chunk)
         delta = time.perf_counter() - start
         logging.info(
             f"Wrote in total {total_bytes} bytes to irods in {delta} secs or {total_bytes/delta} bytes per second"
         )
-    return {}
+    if error:
+        flash(f"Failed to upload {filename}: {error}", "warning")
+        data_object.unlink(force=True)
+        return make_response(
+            flask.jsonify({"file": filename, "status": f"Error: {error}"}), 400
+        )
+    return make_response(
+        flask.jsonify({"file": filename, "status": "OK"}), 200
+    )
 
 
 @browse_bp.route("/collection/upload/stream/<path:collection>", methods=["POST", "PUT"])
-@csrf.exempt
 def collection_upload_stream(collection: str):
     collection = unquote(collection)
     logging.info(f"Request for file upload {collection}")

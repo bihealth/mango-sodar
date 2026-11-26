@@ -130,6 +130,7 @@ def get_app(
     app.config["irods_zones"] = irods_zone_config_module.irods_zones
     app.config["DEFAULT_IRODS_ZONE"] = os.getenv("MANGO_DEFAULT_IRODS_ZONE")
     app.config["MAX_DOWNLOAD_FILE_SIZE"] = int(os.getenv("MANGO_MAX_DOWNLOAD_FILE_SIZE", "53687091200"))
+    app.config["MAX_UPLOAD_FILE_SIZE"] = int(os.getenv("MANGO_MAX_UPLOAD_FILE_SIZE", "53687091200"))
 
     # Initialize Jinja extensions
     app.jinja_env.add_extension(MangoJinjaExtension)
