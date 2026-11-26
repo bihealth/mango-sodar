@@ -81,7 +81,7 @@
                 
                 <div class="modal-body" id="folderUploadFiles">
                 <div class="alert alert-warning">
-                Note: If you upload a file with a path that already exists it will be overwritten.
+                Note: If you upload a file with a path that already exists it will be overwritten, and if the download fails the file will be permanently eliminated. Each file can be at most {{ config.MAX_UPLOAD_FILE_SIZE / 1073741824 | round(1) }}GiB in size.
                 </div>
                 <form action="{{ url_for("browse_bp.test_folder_upload", collection=collection.path[1:]) }}"
                   method="post" enctype="multipart/form-data" id="folderUpload">
@@ -96,6 +96,7 @@
                     webkitdirectory
                     multiple/>
                 </div>
+                </form>
                 <br/>
             <div id="warningBadge" class="alert alert-danger" role="alert" hidden></div>
 
@@ -134,7 +135,6 @@
             const folderUploadURL = "{{ url_for("browse_bp.test_folder_upload", collection=collection.path[1:]) }}"
           </script>
           <script src="{{url_for('static', filename='dist/folderUpload.js')}}"></script>
-        </form>
         </div>
         <div class="col-6 mr-auto">
         {# <form action="{{ url_for('browse_bp.collection_upload_file')}}" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
@@ -155,7 +155,6 @@
                 method="post"
                 class="dropzone rounded"
                 id="mango-dropzone">
-            {# <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" /> #}
           </form>
           <button class="btn btn-primary mt-2 float-end" id="submit-all">Start uploading all files</button>
         </div>
@@ -391,10 +390,10 @@ Dropzone.options.mangoDropzone = {
     autoProcessQueue: false,
     parallelUploads: 3,
     addRemoveLinks: true,
-    maxFilesize: 5120,
+    maxFilesize: {{ config.MAX_UPLOAD_FILE_SIZE }},
     binaryBody: true,
     method: "post",
-    dictDefaultMessage: "Click or drag files (max 5GiB each) to upload here. When your selection is ready, click the buttton below to start the upload.",
+    dictDefaultMessage: "Click or drag files (max {{ config.MAX_UPLOAD_FILE_SIZE / 1073741824 | round(1) }}GiB each) to upload here. When your selection is ready, click the buttton below to start the upload.",
     init: function () {
       var submitButton = document.querySelector("#submit-all")
 
@@ -406,6 +405,8 @@ Dropzone.options.mangoDropzone = {
       this.on("sending", function(file, xhr, formData) {
         // add filename header since we changed to binary streaming 
         xhr.setRequestHeader("filename", file.upload.filename)
+        // add CSRF token since Dropzone ignores foreign input in the form
+        xhr.setRequestHeader("X-CSRF-Token", "{{ csrf_token() }}")
       });
       // if there are more than the parallel uploads parameter, ensure that all get uploaded
       this.on("processing", function() { ourDropzone.options.autoProcessQueue = true; });

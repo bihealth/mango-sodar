@@ -326,8 +326,6 @@ def collection_browse(collection=None):
         current_collection = g.irods_session.collections.get(co_path)
     except:
         abort(404, "Path not found or not accessible for you")
-
-
     sub_collections = get_subcollections(current_collection)
     data_objects = current_collection.data_objects
 
@@ -963,10 +961,7 @@ def test_folder_upload(collection: str):
     pathlib_file = Path(file.filename)
     subcollection = Path(collection) / pathlib_file.parent
     try:
-        upload_with_stream(str(subcollection), pathlib_file.name, file.stream)
-        return make_response(
-            flask.jsonify({"file": file.filename, "status": "OK"}), 200
-        )
+        return upload_with_stream(str(subcollection), pathlib_file.name, file.stream)
     except Exception as e:
         return make_response(
             flask.jsonify({"file": file.filename, "status": f"Error: {e}"}), 400
@@ -980,26 +975,37 @@ def upload_with_stream(collection: str, filename: str, stream):
     data_object = irods_session.data_objects.create(
         f"{collection}/{filename}", force=True
     )
+    CHUNK_SIZE = 4 * 1024 * 1024
+    error = None
     with data_object.open(mode="w") as do_handle:
         total_bytes = 0
         start = time.perf_counter()
         while True:
-            CHUNK_SIZE = 4 * 1024 * 1024
             chunk = stream.read(CHUNK_SIZE)
             actual_chunk_length = len(chunk)
             total_bytes += actual_chunk_length
             if actual_chunk_length == 0:
+                break
+            if total_bytes >= current_app.config["MAX_UPLOAD_FILE_SIZE"]:
+                error = f"File size exceeded {current_app.config['MAX_UPLOAD_FILE_SIZE']} bytes"
                 break
             do_handle.write(chunk)
         delta = time.perf_counter() - start
         logging.info(
             f"Wrote in total {total_bytes} bytes to irods in {delta} secs or {total_bytes/delta} bytes per second"
         )
-    return {}
+    if error:
+        flash(f"Failed to upload {filename}: {error}", "warning")
+        data_object.unlink(force=True)
+        return make_response(
+            flask.jsonify({"file": filename, "status": f"Error: {error}"}), 400
+        )
+    return make_response(
+        flask.jsonify({"file": filename, "status": "OK"}), 200
+    )
 
 
 @browse_bp.route("/collection/upload/stream/<path:collection>", methods=["POST", "PUT"])
-@csrf.exempt
 def collection_upload_stream(collection: str):
     collection = unquote(collection)
     logging.info(f"Request for file upload {collection}")
